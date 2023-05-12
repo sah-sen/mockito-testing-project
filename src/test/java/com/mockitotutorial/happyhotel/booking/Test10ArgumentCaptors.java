@@ -1,24 +1,28 @@
+
 package com.mockitotutorial.happyhotel.booking;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
+import org.mockito.ArgumentCaptor;
 
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
-import static org.mockito.ArgumentMatchers.*;
 
 
-public class Test07VerifyingBehaviour {
+public class Test10ArgumentCaptors {
 
     private BookingService bookingService;
     private PaymentService paymentServiceMock;
     private RoomService roomServiceMock;
     private BookingDAO bookingDAOMock;
     private MailSender mailSenderMock;
+    private ArgumentCaptor<Double> doubleCaptor;
+
 
     @BeforeEach
     void setup(){
@@ -29,40 +33,47 @@ public class Test07VerifyingBehaviour {
 
         this.bookingService = new BookingService(paymentServiceMock, roomServiceMock,
                 bookingDAOMock, mailSenderMock);
+
+        this.doubleCaptor =ArgumentCaptor.forClass(Double.class);
+
     }
     @Test
-    @DisplayName("Should invoke payment when prepaid")
-    public void shouldInvokePaymentWhenPrepaid() {
+    @DisplayName("Should pay correct price when input ok")
+    public void shouldPayCorrectPriceWhenInputOK() {
         //given
         BookingRequest bookingRequest = new BookingRequest("1", LocalDate.of(2020,01,01),
-                LocalDate.of(2020,01,05),2,false);
+                LocalDate.of(2020,01,05),2,true);
       //when
 
         bookingService.makeBooking(bookingRequest);
 
         //then
-        verify(paymentServiceMock, never()).pay(any(),anyDouble());
-        //verify that works when not prepaid (false)
+        verify(paymentServiceMock, times(1)).pay(eq(bookingRequest), doubleCaptor.capture());
+        double capturedArgument = doubleCaptor.getValue();
+
+        assertEquals(400.0, capturedArgument);
     }
 
+
     @Test
-    @DisplayName("Should invoke payment when prepaid")
-    public void shouldInvokePaymentWhenPrepaid2() {
+    @DisplayName("Should pay correct prices when multiple calls")
+    public void shouldPayCorrectPricesWhenMultipleCalls() {
+
         //given
         BookingRequest bookingRequest = new BookingRequest("1", LocalDate.of(2020,01,01),
                 LocalDate.of(2020,01,05),2,true);
+        BookingRequest bookingRequest2 = new BookingRequest("1", LocalDate.of(2020,01,01),
+                LocalDate.of(2020,01,02),2,true);
+
+        List<Double> expectedValues = Arrays.asList(400.0,100.0);
         //when
 
         bookingService.makeBooking(bookingRequest);
+        bookingService.makeBooking(bookingRequest2);
 
         //then
+        verify(paymentServiceMock, times(2)).pay(any(), doubleCaptor.capture());
+        List<Double> capturedArguments = doubleCaptor.getAllValues();
 
-        //checks that the pay method contains the following paramaters
-        verify(paymentServiceMock).pay(bookingRequest,400.0);
-            verifyNoMoreInteractions(paymentServiceMock);
-        //this makes sure the above method was only used once, passes only if prepaid is true
-
-    }
-
-
+        assertEquals(expectedValues, capturedArguments);        }
 }
