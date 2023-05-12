@@ -27,7 +27,7 @@ public class Test01FirstMocks {
     public void shouldCalculateCorrectPriceWhenCorrectInput() {
         //given
         BookingRequest bookingRequest = new BookingRequest("1", LocalDate.of(2020,01,01),
-                LocalDate.of(2020,01,005),2,false);
+                LocalDate.of(2020,01,05),2,false);
         double expected = 4*2 *50.0;
 
         //when
